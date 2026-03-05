@@ -7,7 +7,7 @@ import asyncio
 from app.config import settings
 from app.core.telegram_client import TelegramClient
 from app.core.gateway_client import GatewayClient
-from app.core.logging import logger  # Используем наш логгер
+from app.core.logging_auth import logger
 
 router = APIRouter()
 
@@ -118,13 +118,9 @@ async def callback(request: Request):
         user_hash = hashlib.sha256(hash_input.encode()).hexdigest()
         logger.info(f"✓ Hash generated: {user_hash[:20]}...")
 
-        # Отправляем в Gateway (в фоне, не ждем)
         logger.info("Starting Gateway sync task...")
         asyncio.create_task(
-            gateway_client.sync_user_hash(
-                user_hash,
-                {"name": user_data.get("name")}
-            )
+            gateway_client.sync_user_hash(user_hash, user_data.get("name"))
         )
         logger.info("Gateway sync task started")
 
@@ -133,9 +129,7 @@ async def callback(request: Request):
         return {
             "success": True,
             "user_hash": user_hash,
-            "userdata": {
-                "name": user_data.get("name")
-            }
+            "username": user_data.get("name")
         }
 
     except Exception as e:

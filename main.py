@@ -1,7 +1,7 @@
 from fastapi import FastAPI
-from app.api.v1.endpoints import auth
+from app.api.endpoints import auth
 from app.config import settings
-from app.core.logging import setup_logging, logger
+from app.core.logging_auth import setup_logging, logger
 
 # Настраиваем логирование перед всем остальным
 setup_logging()

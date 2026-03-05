@@ -1,6 +1,6 @@
 import httpx
 import asyncio
-from app.core.logging import logger  # Используем наш настроенный логгер
+from app.core.logging_auth import logger
 from app.config import settings
 
 
@@ -13,40 +13,33 @@ class GatewayClient:
         self.mock_mode = settings.gateway_mock_mode
         logger.info(f"GatewayClient initialized with mock_mode={self.mock_mode}")
 
-    async def sync_user_hash(self, user_hash: str, user_data: dict = None):
+    async def sync_user_hash(self, user_hash: str, username: str = None):
         """
         Отправляет хэш пользователя в API Gateway
         В mock-режиме только логирует и имитирует успех
         """
-        # Подготавливаем данные (только то, что просит Gateway)
         payload = {
             "user_hash": user_hash,
-            "userdata": {
-                "name": user_data.get("name") if user_data else None
-            }
+            "username": username
         }
 
         logger.info(f"=== GATEWAY SYNC ATTEMPT ===")
         logger.info(f"Mock mode: {self.mock_mode}")
         logger.info(f"User hash: {user_hash[:20]}...")
-        logger.info(f"User name: {payload['userdata']['name']}")
+        logger.info(f"User name: {username}")
 
-        # Если включен режим имитации
         if self.mock_mode:
             logger.info(f"MOCK MODE: Would send to Gateway: {payload}")
             logger.info(f"MOCK MODE: Endpoint would be: {self.sync_endpoint}")
 
-            # Имитируем небольшую задержку как при реальном запросе
             await asyncio.sleep(0.5)
 
-            # Логируем "успех"
             logger.info(f"✅ MOCK MODE: Successfully synced user hash: {user_hash[:10]}...")
-            logger.info(f"✅ MOCK MODE: User name: {payload['userdata']['name']}")
+            logger.info(f"✅ MOCK MODE: User name: {username}")
             logger.info(f"=== GATEWAY SYNC COMPLETE ===\n")
 
             return True
 
-        # Реальный режим (когда Gateway будет готов)
         logger.info(f"Real mode: sending to {self.sync_endpoint}")
 
         for attempt in range(self.max_retries):
@@ -71,7 +64,7 @@ class GatewayClient:
 
             except httpx.TimeoutException:
                 logger.warning(f"Attempt {attempt + 1}: Timeout connecting to Gateway")
-            except httpx.ConnectionError:
+            except httpx.ConnectError:
                 logger.warning(f"Attempt {attempt + 1}: Cannot connect to Gateway")
             except Exception as e:
                 logger.error(f"Attempt {attempt + 1}: Unexpected error: {str(e)}")

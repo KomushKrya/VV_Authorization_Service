@@ -1,11 +1,9 @@
 import httpx
 import base64
-import hashlib
-import secrets
 from jose import jwt, jwk
 from jose.utils import base64url_decode
 from app.config import settings
-from app.core.logging import logger  # Добавляем импорт
+from app.core.logging_auth import logger  # Добавляем импорт
 
 
 class TelegramClient:
