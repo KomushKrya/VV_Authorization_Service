@@ -16,7 +16,8 @@ class TelegramClient:
 
         # Кэш для публичных ключей
         self.public_keys = None
-        logger.info("TelegramClient initialized")
+        self.proxy_url = settings.telegram_proxy
+        logger.info(f"TelegramClient initialized with proxy: {self.proxy_url}")
 
     async def get_public_keys(self):
         """Получает публичные ключи Telegram для проверки подписи JWT"""
@@ -25,11 +26,12 @@ class TelegramClient:
             return self.public_keys
 
         logger.info("Fetching public keys from Telegram")
-        async with httpx.AsyncClient() as client:
+        # Передаем прокси только если он задан в .env
+        proxies = self.proxy_url if self.proxy_url else None
+        async with httpx.AsyncClient(proxies=proxies) as client:
             response = await client.get(self.jwks_url)
             response.raise_for_status()
             self.public_keys = response.json()
-            logger.info(f"Received {len(self.public_keys.get('keys', []))} public keys")
             return self.public_keys
 
     async def exchange_code(self, code: str):
@@ -56,13 +58,16 @@ class TelegramClient:
         }
 
         logger.debug(f"Token request data: {data}")
-
-        async with httpx.AsyncClient() as client:
+        proxies = self.proxy_url if self.proxy_url else None
+        async with httpx.AsyncClient(proxies=proxies) as client:
             response = await client.post(
                 self.token_url,
                 data=data,
                 headers=headers
             )
+            if response.status_code != 200:
+                logger.error(f"Telegram returned error {response.status_code}: {response.text}")
+                response.raise_for_status()
 
             logger.debug(f"Token response status: {response.status_code}")
             response.raise_for_status()

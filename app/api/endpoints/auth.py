@@ -11,10 +11,8 @@ from app.core.logging_auth import logger
 
 router = APIRouter()
 
-# Временное хранилище state
 state_storage = {}
 
-# Создаем экземпляры клиентов
 telegram_client = TelegramClient()
 gateway_client = GatewayClient()
 
@@ -72,7 +70,6 @@ async def callback(request: Request):
             "details": "Missing code or state"
         }
 
-    # Проверяем state
     if state not in state_storage:
         logger.error(f"Invalid state: {state[:20]}... not found in storage")
         return {
@@ -92,10 +89,8 @@ async def callback(request: Request):
 
     logger.info(f"State validated successfully")
 
-    # Отмечаем state как использованный
     state_storage[state]["used"] = True
 
-    # Очищаем старые state
     current_time = time.time()
     expired_states = [s for s, info in state_storage.items()
                       if current_time - info["created_at"] > 300]
@@ -112,17 +107,21 @@ async def callback(request: Request):
         user_data = await telegram_client.verify_and_decode_id_token(id_token)
         logger.info(f"✓ Token verified. User: {user_data.get('name')} (ID: {user_data['telegram_id']})")
 
-        # Генерируем хэш
         telegram_id = user_data["telegram_id"]
         hash_input = f"{telegram_id}{settings.hash_salt}"
         user_hash = hashlib.sha256(hash_input.encode()).hexdigest()
         logger.info(f"✓ Hash generated: {user_hash[:20]}...")
 
         logger.info("Starting Gateway sync task...")
-        asyncio.create_task(
-            gateway_client.sync_user_hash(user_hash, user_data.get("name"))
-        )
-        logger.info("Gateway sync task started")
+        sync_success = await gateway_client.sync_user_hash(user_hash, user_data.get("name"))
+        if not sync_success:
+            logger.error(f"❌ Authentication error: {str(e)}")
+            logger.info(f"=== AUTHENTICATION FAILED ===\n")
+            return {
+                "success": False,
+                "error": "auth_failed",
+                "details": "bruh"
+            }
 
         logger.info(f"=== AUTHENTICATION SUCCESSFUL ===\n")
 

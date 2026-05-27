@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     telegram_client_id: str
     telegram_client_secret: str
     telegram_redirect_uri: str
+    telegram_proxy: str = None
 
     # Service
     service_name: str = "auth-service"
