@@ -60,7 +60,7 @@
 async function startAuth() {
     try {
         // Запрашиваем у нашего сервиса в Docker ссылку на авторизацию
-        const response = await fetch('http://186.246.10.192:8001/auth/auth/login');
+        const response = await fetch('http://62.113.41.127:8001/auth/auth/login');
         if (!response.ok) throw new Error('Ошибка сервера');
         
         const data = await response.json();

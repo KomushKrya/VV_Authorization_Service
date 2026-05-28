@@ -35,7 +35,6 @@ class GatewayClient:
 
         logger.info(f"Real mode: sending to {self.sync_endpoint}")
 
-        # ИЗМЕНЕНИЕ: Создаем клиент ОДИН раз для всех попыток ретрая
         async with httpx.AsyncClient(trust_env=False) as client:
             for attempt in range(self.max_retries):
                 try:
@@ -63,7 +62,6 @@ class GatewayClient:
                 except Exception as e:
                     logger.error(f"Attempt {attempt + 1}: Unexpected error: {str(e)}")
 
-                # Если это не последняя попытка — ждем перед повтором
                 if attempt < self.max_retries - 1:
                     logger.info(f"Retrying in {self.retry_delay} seconds...")
                     await asyncio.sleep(self.retry_delay)

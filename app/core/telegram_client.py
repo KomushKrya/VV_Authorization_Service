@@ -14,7 +14,6 @@ class TelegramClient:
         self.token_url = "https://oauth.telegram.org/token"
         self.jwks_url = "https://oauth.telegram.org/.well-known/jwks.json"
 
-        # Кэш для публичных ключей
         self.public_keys = None
         self.proxy_url = settings.telegram_proxy
         logger.info(f"TelegramClient initialized with proxy: {self.proxy_url}")
@@ -27,7 +26,6 @@ class TelegramClient:
             return self.public_keys
 
         logger.info("Fetching public keys from Telegram")
-        # Передаем прокси только если он задан в .env
         proxies = self.proxy_url if self.proxy_url else None
         async with httpx.AsyncClient(timeout=self.timeout, proxies=proxies) as client:
             response = await client.get(self.jwks_url)
@@ -41,11 +39,9 @@ class TelegramClient:
         """
         logger.info("Exchanging authorization code for tokens")
 
-        # Создаем Basic Auth заголовок
         credentials = f"{self.client_id}:{self.client_secret}"
         encoded_credentials = base64.b64encode(credentials.encode()).decode()
 
-        # Подготавливаем данные для запроса
         data = {
             "grant_type": "authorization_code",
             "code": code,
@@ -89,14 +85,11 @@ class TelegramClient:
         """
         logger.info("Verifying ID token signature")
 
-        # Получаем заголовок токена без проверки
         unverified_header = jwt.get_unverified_header(id_token)
         logger.debug(f"Token header: {unverified_header}")
 
-        # Получаем публичные ключи
         jwks = await self.get_public_keys()
 
-        # Ищем ключ с нужным kid
         public_key = None
         for key in jwks["keys"]:
             if key["kid"] == unverified_header["kid"]:
@@ -107,11 +100,9 @@ class TelegramClient:
             logger.error(f"No matching public key found for kid: {unverified_header['kid']}")
             raise ValueError("No matching public key found")
 
-        # Проверяем подпись
         message, encoded_signature = id_token.rsplit('.', 1)
         decoded_signature = base64url_decode(encoded_signature.encode())
 
-        # Создаем ключ для проверки
         key = jwk.construct(public_key)
 
         if not key.verify(message.encode(), decoded_signature):
@@ -120,10 +111,8 @@ class TelegramClient:
 
         logger.info("✓ Token signature verified")
 
-        # Декодируем payload
         claims = jwt.get_unverified_claims(id_token)
 
-        # Проверяем обязательные поля
         if claims.get("iss") != "https://oauth.telegram.org":
             logger.error(f"Invalid issuer: {claims.get('iss')}")
             raise ValueError("Invalid issuer")
@@ -134,7 +123,6 @@ class TelegramClient:
 
         logger.info(f"✓ Token claims verified for user: {claims.get('name')}")
 
-        # Возвращаем данные пользователя
         return {
             "telegram_id": claims.get("sub") or claims.get("id"),
             "name": claims.get("name"),

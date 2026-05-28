@@ -5,21 +5,17 @@ load_dotenv()
 
 
 class Settings(BaseSettings):
-    # Telegram
     telegram_client_id: str
     telegram_client_secret: str
     telegram_redirect_uri: str
     telegram_proxy: str = None
 
-    # Service
     service_name: str = "auth-service"
     port: int = 8000
     environment: str = "development"
 
-    # Security
     hash_salt: str
 
-    # Gateway
     gateway_url: str
     gateway_mock_mode: bool = True
 
