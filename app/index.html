@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Демо-клиент Авторизации</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f4f6f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        h2 { color: #333; margin-bottom: 10px; }
+        p { color: #666; font-size: 14px; margin-bottom: 30px; }
+        .tg-button {
+            display: inline-block;
+            background-color: #54a9eb;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            text-decoration: none;
+            transition: background-color 0.2s;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .tg-button:hover { background-color: #4397da; }
+        .error-msg { color: red; margin-top: 15px; font-size: 13px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <h2>Добро пожаловать</h2>
+    <p>Для продолжения работы необходимо пройти авторизацию через Telegram.</p>
+    
+    <button onclick="startAuth()" class="tg-button">
+        Войти через Telegram
+    </button>
+    <div id="error" class="error-msg">Не удалось получить ссылку для авторизации</div>
+</div>
+
+<script>
+async function startAuth() {
+    try {
+        // Запрашиваем у нашего сервиса в Docker ссылку на авторизацию
+        const response = await fetch('http://186.246.10.192:8001/auth/auth/login');
+        if (!response.ok) throw new Error('Ошибка сервера');
+        
+        const data = await response.json();
+        
+        // Перенаправляем пользователя на официальную страницу Telegram OAuth
+        if (data.auth_url) {
+            window.location.href = data.auth_url;
+        } else {
+            throw new Error('Неверный формат ответа');
+        }
+    } catch (err) {
+        console.error(err);
+        document.getElementById('error').style.display = 'block';
+    }
+}
+</script>
+
+</body>
+</html>

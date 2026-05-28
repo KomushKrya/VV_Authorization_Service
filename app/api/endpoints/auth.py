@@ -115,7 +115,7 @@ async def callback(request: Request):
         logger.info("Starting Gateway sync task...")
         sync_success = await gateway_client.sync_user_hash(user_hash, user_data.get("name"))
         if not sync_success:
-            logger.error(f"❌ Authentication error: {str(e)}")
+            logger.error(f"❌ Authentication error:")
             logger.info(f"=== AUTHENTICATION FAILED ===\n")
             return {
                 "success": False,

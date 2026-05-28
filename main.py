@@ -23,20 +23,28 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 
+
 @app.get("/routes")
 async def get_routes():
     """
     Эндпоинт для API Gateway.
-    Динамически собирает и возвращает список всех путей нашего микросервиса.
+    Динамически собирает список путей в новом плоском формате:
+    каждому HTTP-методу соответствует отдельный объект.
     """
     routes_list = []
     for route in app.routes:
+        # Исключаем служебные эндпоинты документации FastAPI
         if hasattr(route, "path") and not route.path.startswith(("/openapi.json", "/docs", "/redoc")):
-            routes_list.append({
-                "path": route.path,
-                "methods": list(route.methods) if hasattr(route, "methods") else []
-            })
-    logger.info(f"Gateway requested routes. Returned {len(routes_list)} items.")
+            # Во FastAPI у одного пути может быть сет из нескольких методов, например {"GET", "POST"}
+            # Для нового формата Шлюза мы разворачиваем их в отдельные элементы
+            methods = route.methods if hasattr(route, "methods") else ["GET"]
+            for method in methods:
+                routes_list.append({
+                    "method": method.upper(),
+                    "path": route.path
+                })
+
+    logger.info(f"Gateway requested routes in new format. Returned {len(routes_list)} items.")
     return {"routes": routes_list}
 
 @app.get("/")

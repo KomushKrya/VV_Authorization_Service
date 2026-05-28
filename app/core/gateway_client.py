@@ -7,7 +7,7 @@ from app.config import settings
 class GatewayClient:
     def __init__(self):
         self.gateway_url = settings.gateway_url
-        self.sync_endpoint = f"{self.gateway_url}/api/v1/client/new_login"
+        self.sync_endpoint = f"{self.gateway_url}/database/client/new_login"
         self.max_retries = 3
         self.retry_delay = 1
         self.mock_mode = settings.gateway_mock_mode

@@ -18,6 +18,7 @@ class TelegramClient:
         self.public_keys = None
         self.proxy_url = settings.telegram_proxy
         logger.info(f"TelegramClient initialized with proxy: {self.proxy_url}")
+        self.timeout = 30.0
 
     async def get_public_keys(self):
         """Получает публичные ключи Telegram для проверки подписи JWT"""
@@ -28,7 +29,7 @@ class TelegramClient:
         logger.info("Fetching public keys from Telegram")
         # Передаем прокси только если он задан в .env
         proxies = self.proxy_url if self.proxy_url else None
-        async with httpx.AsyncClient(proxies=proxies) as client:
+        async with httpx.AsyncClient(timeout=self.timeout, proxies=proxies) as client:
             response = await client.get(self.jwks_url)
             response.raise_for_status()
             self.public_keys = response.json()
@@ -59,7 +60,7 @@ class TelegramClient:
 
         logger.debug(f"Token request data: {data}")
         proxies = self.proxy_url if self.proxy_url else None
-        async with httpx.AsyncClient(proxies=proxies) as client:
+        async with httpx.AsyncClient(timeout=self.timeout, proxies=proxies) as client:
             response = await client.post(
                 self.token_url,
                 data=data,
